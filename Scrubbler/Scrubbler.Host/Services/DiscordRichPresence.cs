@@ -15,7 +15,11 @@ internal class DiscordRichPresence : IDiscordRichPresence
 
     public DiscordRichPresence()
     {
-        _client = new DiscordRpcClient("1473046974709239828");
+        _client = new DiscordRpcClient("1473046974709239828")
+        {
+            SkipIdenticalPresence = true
+        };
+        _client.Initialize();
     }
 
     #endregion Construction
@@ -37,6 +41,11 @@ internal class DiscordRichPresence : IDiscordRichPresence
                 LargeImageText = presence.LargeImageText,
                 SmallImageKey = presence.SmallImageKey,
                 SmallImageText = presence.SmallImageText
+            },
+            Timestamps = new Timestamps()
+            {
+                Start = presence.StartTimestamp?.UtcDateTime,
+                End = presence.EndTimestamp?.UtcDateTime
             }
         });
     }
