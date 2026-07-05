@@ -1,6 +1,15 @@
 ORG="Scrubbler-Dev"
 REPO_PREFIX="Scrubbler"
-BRANCH_PREFIX="chore/bump-deps-"
+
+if [[ -n "${BRANCH_PREFIX:-}" ]]; then
+  BRANCH_PREFIXES=("$BRANCH_PREFIX")
+else
+  BRANCH_PREFIXES=(
+    "chore/bump-deps-"
+    "chore/bump-pluginbase-"
+    "chore/bump-mediaplayerbase-"
+  )
+fi
 
 # merge method: choose ONE
 MERGE_METHOD="--merge"   # or: --squash  or: --rebase
@@ -11,8 +20,19 @@ for repo in $repos; do
   echo "== $ORG/$repo =="
 
   # find matching branches
-  branches=$(gh api --paginate "repos/$ORG/$repo/branches?per_page=100" \
-    --jq ".[] | select(.name | startswith(\"$BRANCH_PREFIX\")) | .name")
+  all_branches=$(gh api --paginate "repos/$ORG/$repo/branches?per_page=100" --jq ".[].name")
+  branches=""
+
+  while IFS= read -r candidate_branch; do
+    [[ -z "$candidate_branch" ]] && continue
+
+    for branch_prefix in "${BRANCH_PREFIXES[@]}"; do
+      if [[ "$candidate_branch" == "$branch_prefix"* ]]; then
+        branches+="$candidate_branch"$'\n'
+        break
+      fi
+    done
+  done <<< "$all_branches"
 
   if [[ -z "$branches" ]]; then
     echo "  no matching branches"
@@ -45,9 +65,32 @@ for repo in $repos; do
     is_draft=$(echo "$pr_json" | jq -r '.isDraft')
     merge_state=$(echo "$pr_json" | jq -r '.mergeStateStatus')
 
-    # count failing / pending checks (ignore checks without a conclusion yet)
-    failing=$(echo "$pr_json" | jq '[.statusCheckRollup[] | select(.conclusion != null and .conclusion != "SUCCESS" and .conclusion != "SKIPPED" and .conclusion != "NEUTRAL")] | length')
-    pending=$(echo "$pr_json" | jq '[.statusCheckRollup[] | select(.conclusion == null)] | length')
+    # count failing / pending checks. GitHub check runs can have an empty conclusion while still in progress.
+    failing=$(echo "$pr_json" | jq '[
+      (.statusCheckRollup // [])[]
+      | select(
+          (.conclusion // "") as $conclusion
+          | (.state // "") as $state
+          | (
+              ($conclusion != "" and (["SUCCESS", "SKIPPED", "NEUTRAL"] | index($conclusion) | not))
+              or
+              ($state != "" and (["SUCCESS", "SKIPPED", "NEUTRAL"] | index($state) | not) and $state != "PENDING" and $state != "EXPECTED")
+            )
+        )
+    ] | length')
+    pending=$(echo "$pr_json" | jq '[
+      (.statusCheckRollup // [])[]
+      | select(
+          (.status // "") as $status
+          | (.conclusion // "") as $conclusion
+          | (.state // "") as $state
+          | (
+              ($status != "" and $status != "COMPLETED")
+              or
+              ($status == "" and $conclusion == "" and ($state == "" or $state == "PENDING" or $state == "EXPECTED"))
+            )
+        )
+    ] | length')
 
     if [[ "$is_draft" == "true" ]]; then
       echo "    PR #$pr_number is draft -> skipping"
@@ -71,7 +114,7 @@ for repo in $repos; do
       continue
     }
 
-    # fallback delete attempt (in case --delete-branch didn’t do it)
+    # fallback delete attempt (in case --delete-branch did not do it)
     gh api -X DELETE "repos/$ORG/$repo/git/refs/heads/$branch" >/dev/null 2>&1 || true
     echo "    done"
   done <<< "$branches"
