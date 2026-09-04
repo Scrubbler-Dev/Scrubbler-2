@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Scrubbler.Host.Presentation.Accounts;
 using Scrubbler.Host.Presentation.Logging;
 using Scrubbler.Host.Presentation.Plugins;
@@ -30,6 +31,9 @@ public partial class App : Application
 
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        var dispatcherQueue = DispatcherQueue.GetForCurrentThread()
+            ?? throw new InvalidOperationException("Application startup requires a UI dispatcher queue.");
+
         if (Environment.GetEnvironmentVariable("SCRUBBLER_PLUGIN_MODE") == "Debug")
         {
             var slnDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));
@@ -79,6 +83,7 @@ public partial class App : Application
                     services.AddSingleton<IUserFeedbackService, UserFeedbackService>();
                     services.AddSingleton<IDialogService, DialogService>();
                     services.AddSingleton<ISettingsStore, JsonSettingsStore>();
+                    services.AddSingleton(dispatcherQueue);
                     services.AddSingleton<IPluginManager, PluginManager>();
                     services.AddSingleton<ILinkOpenerService, LinkOpenerService>();
                     services.AddSingleton<IModuleLogServiceFactory, ModuleLogServiceFactory>();
@@ -129,7 +134,11 @@ public partial class App : Application
 #endif
         MainWindow.SetWindowIcon();
 
-        Host = await builder.NavigateAsync<Shell>();
+        Host = await builder.NavigateAsync<Shell>(async (services, navigator) =>
+        {
+            await services.GetRequiredService<IPluginManager>().InitializeAsync();
+            await navigator.NavigateViewModelAsync<MainViewModel>(this);
+        });
         Ready?.Invoke(this, EventArgs.Empty);
     }
 

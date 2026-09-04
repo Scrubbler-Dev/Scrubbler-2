@@ -8,6 +8,11 @@ namespace Scrubbler.Host.Services;
 public interface IPluginManager
 {
     /// <summary>
+    /// Loads installed plugins on the UI thread before the initial navigation.
+    /// </summary>
+    Task InitializeAsync();
+
+    /// <summary>
     /// Gets the plugins currently installed and active in the application.
     /// </summary>
     /// <returns>A collection of installed <see cref="IPlugin"/> instances.</returns>

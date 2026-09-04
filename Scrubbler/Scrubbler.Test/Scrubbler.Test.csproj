@@ -16,10 +16,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Scrubbler.Host\Scrubbler.Host.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
         <Using Include="NUnit.Framework" />
     </ItemGroup>
 

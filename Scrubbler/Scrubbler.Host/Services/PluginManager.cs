@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Scrubbler.Host.Helper;
 using Scrubbler.PluginBase.Plugin;
 using Scrubbler.PluginBase.Plugin.Account;
@@ -17,6 +19,8 @@ internal class PluginManager : IPluginManager
     private readonly ISettingsStore _settings;
     private readonly IWritableOptions<UserConfig> _config;
     private readonly IServiceProvider _serviceProvider;
+    private readonly DispatcherQueue _dispatcherQueue;
+    private Task? _initializationTask;
     private readonly string _rootDir;
     private readonly string _shadowRoot;
 
@@ -46,11 +50,12 @@ internal class PluginManager : IPluginManager
 
     #region Construction
 
-    public PluginManager(IModuleLogServiceFactory logFactory, ISettingsStore settings, IWritableOptions<UserConfig> config, IServiceProvider serviceProvider)
+    public PluginManager(IModuleLogServiceFactory logFactory, ISettingsStore settings, IWritableOptions<UserConfig> config, IServiceProvider serviceProvider, DispatcherQueue dispatcherQueue)
     {
         _settings = settings;
         _config = config;
         _serviceProvider = serviceProvider;
+        _dispatcherQueue = dispatcherQueue;
         _logService = logFactory.Create("Plugin Manager");
 
         if (Environment.GetEnvironmentVariable("SCRUBBLER_PLUGIN_MODE") == "Debug")
@@ -69,10 +74,6 @@ internal class PluginManager : IPluginManager
         {
             await SaveAllPluginsAsync();
         };
-
-        DiscoverInstalledPlugins().Wait();
-        _ = RefreshAvailablePluginsAsync();
-        UpdateAccountFunctionsReceiver();
     }
 
     #endregion Construction
@@ -88,6 +89,9 @@ internal class PluginManager : IPluginManager
     #endregion Plugin lists
 
     #region Public API
+
+    public Task InitializeAsync() => _dispatcherQueue.EnqueueAsync(() =>
+        _initializationTask ??= InitializeCoreAsync());
 
     public async Task InstallAsync(PluginManifestEntry manifest)
     {
@@ -256,12 +260,19 @@ internal class PluginManager : IPluginManager
 
     #region Private load/unload
 
-    private async Task DiscoverInstalledPlugins()
+    private async Task InitializeCoreAsync()
     {
         await LoadPluginsFromDirectory(_rootDir, recursive: true);
+        _ = RefreshAvailablePluginsAsync();
+        UpdateAccountFunctionsReceiver();
     }
 
-    private async Task LoadPluginsFromDirectory(string directory, bool recursive = true)
+    // Plugin constructors and settings loading may create timers or update bound view models.
+    // Dispatch startup discovery and newly installed plugins through the same UI-thread path.
+    private Task LoadPluginsFromDirectory(string directory, bool recursive = true) =>
+        _dispatcherQueue.EnqueueAsync(() => LoadPluginsFromDirectoryCore(directory, recursive));
+
+    private async Task LoadPluginsFromDirectoryCore(string directory, bool recursive)
     {
         if (!Directory.Exists(directory))
             return;
