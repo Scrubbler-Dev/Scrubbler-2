@@ -40,7 +40,7 @@
                                 VerticalAlignment="Center"
                                 Visibility="{Binding CanBeUpdated, Converter={StaticResource BoolToVis}}">
                             <Button.Content>
-                                <SymbolIcon Symbol="PostUpdate"/>
+                                <SymbolIcon Symbol="Download"/>
                             </Button.Content>
                         </Button>
                     </Grid>
