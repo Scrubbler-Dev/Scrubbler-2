@@ -243,6 +243,60 @@ public partial class LogViewModelTests
         }
     }
 
+    [TestCase(LogLevel.Error, 2, 0)]
+    [TestCase(LogLevel.Critical, 2, 0)]
+    [TestCase(LogLevel.Warning, 0, 2)]
+    [TestCase(LogLevel.Information, 0, 0)]
+    public void Sidebar_CreatedAfterStartupMessages_ShowsUnreadCounts(LogLevel level, int errors, int warnings)
+    {
+        var hostLogService = new HostLogService();
+        var log = new LogViewModel(hostLogService, Mock.Of<IUserFeedbackService>(),
+            Mock.Of<IFilePickerService>(), Mock.Of<IFileStorageService>());
+
+        hostLogService.Write(level, "Startup", "First startup message");
+        hostLogService.Write(level, "Startup", "Second startup message");
+
+        var sidebarItem = new MenuNavigationItemViewModel("Logs", null, log);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(sidebarItem.Errors, Is.EqualTo(errors));
+            Assert.That(sidebarItem.Warnings, Is.EqualTo(warnings));
+            Assert.That(sidebarItem.HasErrors, Is.EqualTo(errors > 0));
+            Assert.That(sidebarItem.HasWarnings, Is.EqualTo(warnings > 0));
+            Assert.That(sidebarItem.Infos, Is.Zero);
+        }
+    }
+
+    [Test]
+    public void Sidebar_OpeningLogs_ClearsStartupCountsAndTracksNewUnreadMessages()
+    {
+        var hostLogService = new HostLogService();
+        var log = new LogViewModel(hostLogService, Mock.Of<IUserFeedbackService>(),
+            Mock.Of<IFilePickerService>(), Mock.Of<IFileStorageService>());
+
+        hostLogService.Write(LogLevel.Error, "Startup", "Startup error");
+        hostLogService.Write(LogLevel.Warning, "Startup", "Startup warning");
+        var sidebarItem = new MenuNavigationItemViewModel("Logs", null, log);
+        Assert.That(sidebarItem.Errors, Is.EqualTo(1));
+        Assert.That(sidebarItem.Warnings, Is.EqualTo(1));
+
+        sidebarItem.IsSelected = true;
+        hostLogService.Write(LogLevel.Error, "Startup", "Error while viewing logs");
+        Assert.That(sidebarItem.HasErrors, Is.False);
+        Assert.That(sidebarItem.HasWarnings, Is.False);
+
+        sidebarItem.IsSelected = false;
+        var recreatedItem = new MenuNavigationItemViewModel("Logs", null, log);
+        Assert.That(recreatedItem.HasErrors, Is.False);
+        Assert.That(recreatedItem.HasWarnings, Is.False);
+
+        hostLogService.Write(LogLevel.Warning, "Runtime", "New unread warning");
+        Assert.That(sidebarItem.Warnings, Is.EqualTo(1));
+        Assert.That(recreatedItem.Warnings, Is.EqualTo(1));
+        Assert.That(recreatedItem.Errors, Is.Zero);
+    }
+
     [Test]
     public void NavigationStatusInfo_RaisesEventsWhenNotSelected()
     {

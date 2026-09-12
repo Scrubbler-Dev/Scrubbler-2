@@ -20,6 +20,7 @@ public partial class MenuNavigationItemViewModelTests
         // Arrange
         var mockNavInfo = new Mock<INavigationStatusInfo>(MockBehavior.Strict);
         var subscribed = false;
+        mockNavInfo.SetupGet(m => m.NavigationStatus).Returns(new NavigationStatusEventArgs(2, 1, 3));
 
         // Capture subscription via SetupAdd to ensure the constructor wires the event handler.
         mockNavInfo
@@ -31,6 +32,9 @@ public partial class MenuNavigationItemViewModelTests
 
         // Assert
         Assert.That(subscribed, Is.True, "Constructor should subscribe to NavigationStatusChanged when content implements INavigationStatusInfo.");
+        Assert.That(vm.Errors, Is.EqualTo(2));
+        Assert.That(vm.Warnings, Is.EqualTo(1));
+        Assert.That(vm.Infos, Is.EqualTo(3));
     }
 
     /// <summary>
@@ -48,6 +52,7 @@ public partial class MenuNavigationItemViewModelTests
         var mockStatus = new Mock<INavigationStatusInfo>();
         // Allow property set/get tracking to be verifiable
         mockStatus.SetupAllProperties();
+        mockStatus.SetupGet(m => m.NavigationStatus).Returns(new NavigationStatusEventArgs(0, 0, 0));
 
         var vm = new MenuNavigationItemViewModel("title", null, mockStatus.Object);
 

@@ -15,6 +15,8 @@ internal class PluginManagerViewModel : ObservableObject, INavigationStatusInfo
 
     public event EventHandler<NavigationStatusEventArgs>? NavigationStatusChanged;
 
+    public NavigationStatusEventArgs NavigationStatus => Installed.NavigationStatus;
+
     #endregion Properties
 
     public PluginManagerViewModel(IPluginManager manager)

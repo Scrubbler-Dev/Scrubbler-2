@@ -25,6 +25,8 @@ internal partial class InstalledPluginsViewModel : ObservableObject, INavigation
 
     public event EventHandler<NavigationStatusEventArgs>? NavigationStatusChanged;
 
+    public NavigationStatusEventArgs NavigationStatus => new(0, 0, Plugins.Count(p => p.CanBeUpdated));
+
     private readonly IPluginManager _manager;
 
     #endregion Properties
@@ -65,7 +67,7 @@ internal partial class InstalledPluginsViewModel : ObservableObject, INavigation
             Plugins.Add(vm);
         }
 
-        NavigationStatusChanged?.Invoke(this, new NavigationStatusEventArgs(0, 0, Plugins.Count(p => p.CanBeUpdated)));
+        NavigationStatusChanged?.Invoke(this, NavigationStatus);
     }
 
     private bool HasPluginUpdate(IPlugin plugin)

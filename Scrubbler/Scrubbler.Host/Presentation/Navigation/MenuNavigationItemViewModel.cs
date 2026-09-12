@@ -57,7 +57,10 @@ internal partial class MenuNavigationItemViewModel : NavigationItemViewModelBase
         Icon = icon;
 
         if (content is INavigationStatusInfo n)
+        {
             n.NavigationStatusChanged += Content_NavigationStatusChanged;
+            Content_NavigationStatusChanged(n, n.NavigationStatus);
+        }
     }
 
     private void Content_NavigationStatusChanged(object? sender, NavigationStatusEventArgs e)

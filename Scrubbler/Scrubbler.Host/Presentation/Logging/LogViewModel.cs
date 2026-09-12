@@ -36,6 +36,8 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
 
     public event EventHandler<NavigationStatusEventArgs>? NavigationStatusChanged;
 
+    public NavigationStatusEventArgs NavigationStatus => new(_recentErrors, _recentWarnings, 0);
+
     [ObservableProperty]
     private bool _isSelected;
 
@@ -163,7 +165,7 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
             if (!IsSelected)
             {
                 _recentErrors++;
-                NavigationStatusChanged?.Invoke(this, new NavigationStatusEventArgs(_recentErrors, _recentWarnings, 0));
+                NavigationStatusChanged?.Invoke(this, NavigationStatus);
             }
         }
         else if (entry.Level == LogLevel.Warning)
@@ -173,7 +175,7 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
             if (!IsSelected)
             {
                 _recentWarnings++;
-                NavigationStatusChanged?.Invoke(this, new NavigationStatusEventArgs(_recentErrors, _recentWarnings, 0));
+                NavigationStatusChanged?.Invoke(this, NavigationStatus);
             }
         }
     }
@@ -194,7 +196,7 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
         {
             _recentErrors = 0;
             _recentWarnings = 0;
-            NavigationStatusChanged?.Invoke(this, new NavigationStatusEventArgs(_recentErrors, _recentWarnings, 0));
+            NavigationStatusChanged?.Invoke(this, NavigationStatus);
         }
     }
 }
