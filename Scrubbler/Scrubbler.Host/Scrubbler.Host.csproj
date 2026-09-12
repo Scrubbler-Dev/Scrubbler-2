@@ -20,11 +20,12 @@
         <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <PropertyGroup>
         <!-- Metadata -->
         <ApplicationTitle>Scrubbler 2</ApplicationTitle>
         <ApplicationId>Scrubbler.Host</ApplicationId>
-        <ApplicationDisplayVersion>0.0.1</ApplicationDisplayVersion>
+        <Version>0.0.2</Version>
+        <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
         <ApplicationPublisher>SHOEGAZEssb</ApplicationPublisher>
         <Description>Scrubbler 2 - Manual scrobbling for when a service (or you!) failed to scrobble.</Description>

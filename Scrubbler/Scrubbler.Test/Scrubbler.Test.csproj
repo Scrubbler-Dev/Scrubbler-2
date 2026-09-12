@@ -19,4 +19,8 @@
         <Using Include="NUnit.Framework" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Scrubbler.Host\Scrubbler.Host.csproj" />
+    </ItemGroup>
+
 </Project>
