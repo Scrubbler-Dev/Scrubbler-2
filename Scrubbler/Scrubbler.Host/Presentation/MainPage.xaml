@@ -25,7 +25,7 @@
                             <TextBlock Text="{x:Bind Warnings, Mode=OneWay}" VerticalAlignment="Center" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4" Visibility="{x:Bind HasInfos, Mode=OneWay, Converter={StaticResource BoolToVis}}">
-                            <SymbolIcon Symbol="Caption" Foreground="LightBlue"/>
+                            <SymbolIcon Symbol="Download" Foreground="LightBlue"/>
                             <TextBlock Text="{x:Bind Infos, Mode=OneWay}" VerticalAlignment="Center" />
                         </StackPanel>
                     </StackPanel>
