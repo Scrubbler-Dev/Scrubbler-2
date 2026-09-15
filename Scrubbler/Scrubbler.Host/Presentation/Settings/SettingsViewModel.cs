@@ -21,7 +21,8 @@ internal partial class SettingsViewModel : ObservableObject
         _userConfigOptions = userConfigOptions;
         Categories =
         [
-            new AboutSettingsCategoryViewModel(_userConfigOptions, updateManager, dialogService)
+            new AboutSettingsCategoryViewModel(_userConfigOptions, updateManager, dialogService),
+            new SocialsSettingsCategoryViewModel(_userConfigOptions)
         ];
     }
 
