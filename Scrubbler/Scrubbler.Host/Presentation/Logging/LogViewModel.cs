@@ -68,7 +68,7 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
             LogLevelFilters.Add(filterVm);
         }
 
-        RebuildModulesList();
+        Modules.Add(ALLMODULE);
     }
 
     #endregion Construction
@@ -78,7 +78,8 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
     {
         Entries.Clear();
         FilteredEntries.Clear();
-        RebuildModulesList();
+        Modules.Clear();
+        Modules.Add(ALLMODULE);
         SelectedModule = ALLMODULE;
     }
 
@@ -108,15 +109,17 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
         SaveCommand.NotifyCanExecuteChanged();
     }
 
-    private void RebuildModulesList()
+    private void AddModule(string module)
     {
-        Modules.Clear();
-        Modules.Add(ALLMODULE);
-        var modules = Entries.Select(e => e.Module).Distinct().OrderBy(m => m);
-        foreach (var module in modules)
-        {
-            Modules.Add(module);
-        }
+        if (Modules.Contains(module))
+            return;
+
+        // Keep existing items in place so the ComboBox retains its selection.
+        // The first item is always the "All" filter; sort modules after it.
+        var index = 1;
+        while (index < Modules.Count && Comparer<string>.Default.Compare(Modules[index], module) < 0)
+            index++;
+        Modules.Insert(index, module);
     }
 
     private bool MatchesFilter(LogMessage entry)
@@ -153,7 +156,7 @@ internal partial class LogViewModel : ObservableObject, IHostedService, INavigat
     {
         Entries.Add(entry);
 
-        RebuildModulesList();
+        AddModule(entry.Module);
 
         if (MatchesFilter(entry))
             FilteredEntries.Add(entry);
