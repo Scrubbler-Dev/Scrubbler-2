@@ -21,6 +21,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Scrubbler.Host\Scrubbler.Host.csproj" />
+        <ProjectReference Include="..\Scrubbler.Updater\Scrubbler.Updater.csproj" />
     </ItemGroup>
 
 </Project>

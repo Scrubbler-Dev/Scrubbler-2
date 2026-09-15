@@ -11,4 +11,8 @@
         <!-- todo: publish -->
     </PropertyGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Scrubbler.Test" />
+    </ItemGroup>
+
 </Project>

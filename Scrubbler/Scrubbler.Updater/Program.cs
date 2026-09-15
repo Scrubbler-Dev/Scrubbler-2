@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Scrubbler.Updater;
 
 internal class Program
 {
@@ -16,16 +17,7 @@ internal class Program
         WaitForExit(pid, TimeSpan.FromSeconds(30));
         Console.WriteLine("Scrubbler was closed successfully");
 
-        var parentDir = Directory.GetParent(appDir)!.FullName;
-        var stagingDir = Path.Combine(parentDir, $".scrubbler_staging_{Guid.NewGuid():N}");
-        var backupDir = Path.Combine(parentDir, $".scrubbler_backup_{Guid.NewGuid():N}");
-
-        Directory.CreateDirectory(stagingDir);
-        System.IO.Compression.ZipFile.ExtractToDirectory(package, stagingDir, overwriteFiles: true);
-
-        // swap
-        Directory.Move(appDir, backupDir);
-        Directory.Move(stagingDir, appDir);
+        var backupDir = UpdateInstaller.Install(appDir, package);
 
         Console.WriteLine("Restarting the Scrubbler");
 

@@ -24,7 +24,7 @@
         <!-- Metadata -->
         <ApplicationTitle>Scrubbler 2</ApplicationTitle>
         <ApplicationId>Scrubbler.Host</ApplicationId>
-        <Version>0.0.3</Version>
+        <Version>0.0.4</Version>
         <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
         <ApplicationPublisher>SHOEGAZEssb</ApplicationPublisher>
