@@ -7,6 +7,12 @@ internal class PluginLoadContext(string mainAssemblyPath) : AssemblyLoadContext(
 {
     private readonly AssemblyDependencyResolver _resolver = new(mainAssemblyPath);
 
+    protected override nint LoadUnmanagedDll(string unmanagedDllName)
+    {
+        var path = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+        return path is null ? nint.Zero : LoadUnmanagedDllFromPath(path);
+    }
+
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         // if already loaded in default, reuse it

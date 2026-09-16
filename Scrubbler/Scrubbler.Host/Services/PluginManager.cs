@@ -141,11 +141,14 @@ internal class PluginManager : IPluginManager
                 _logService.Info($"Deleted plugin files from {pluginFolder}");
             }
 
+            PluginSettingsCleanup.Delete(pluginName);
+            _logService.Info($"Removed saved settings for '{pluginName}'.");
+
             PluginUninstalled?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
-            _logService.Error($"Failed to remove plugin files: {ex.Message}");
+            _logService.Error($"Failed to completely remove plugin files or saved settings for '{pluginName}': {ex.Message}");
         }
     }
 
@@ -286,7 +289,7 @@ internal class PluginManager : IPluginManager
                 var originalFolder = Path.GetDirectoryName(dll)!;
 
                 // shadow-copy the plugin folder so the original files are always deletable
-                var shadowFolder = CreateShadowCopy(originalFolder);
+                var shadowFolder = CreateShadowCopy(originalFolder, _shadowRoot);
                 var shadowDll = Path.Combine(shadowFolder, Path.GetFileName(dll));
 
                 var context = new PluginLoadContext(shadowDll);
@@ -371,14 +374,18 @@ internal class PluginManager : IPluginManager
         Directory.CreateDirectory(_shadowRoot);
     }
 
-    private string CreateShadowCopy(string sourceDir)
+    internal static string CreateShadowCopy(string sourceDir, string shadowRoot)
     {
-        var shadowDir = Path.Combine(_shadowRoot, Guid.NewGuid().ToString("N"));
+        var shadowDir = Path.Combine(shadowRoot, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(shadowDir);
 
-        foreach (var file in Directory.EnumerateFiles(sourceDir))
+        // Preserve runtime-specific native assets and other plugin subdirectories.
+        // Do not follow links outside the installed plugin folder.
+        var options = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = System.IO.FileAttributes.ReparsePoint, IgnoreInaccessible = false };
+        foreach (var file in Directory.EnumerateFiles(sourceDir, "*", options))
         {
-            var dest = Path.Combine(shadowDir, Path.GetFileName(file));
+            var dest = Path.Combine(shadowDir, Path.GetRelativePath(sourceDir, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             File.Copy(file, dest, overwrite: true);
         }
 
